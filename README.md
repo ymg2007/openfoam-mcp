@@ -22,79 +22,76 @@
 | `constant/` | turbulenceProperties | 湍流模型 |
 | `0/` | U, p, T 等 | 初始条件和边界条件 |
 
-## 🚀 安装
+## 🚀 快速安装
 
-### 依赖要求
-
-- **Python**: 3.10 或更高版本
-- **操作系统**: Windows, Linux, macOS
-- **Claude Desktop** (可选，用于 GUI 集成)
-
-### Python 依赖
-
-```
-mcp>=1.0.0
-```
-
-## 📦 Windows 安装
-
-### 1. 安装 Python
-
-- 访问 [Python官网](https://www.python.org/downloads/) 下载并安装 Python 3.10+
-- 安装时勾选 "Add Python to PATH"
-
-### 2. 安装依赖
-
-打开 PowerShell 或命令提示符：
+### Windows 一键安装
 
 ```powershell
-# 克隆或下载项目
+# 克隆项目
 git clone https://github.com/ymg2007/openfoam-mcp.git
 cd openfoam-mcp
 
-# 安装依赖
-pip install -r requirements.txt
+# 运行安装脚本
+install.bat
 ```
 
-或使用虚拟环境（推荐）：
+### Linux/macOS 一键安装
+
+```bash
+# 克隆项目
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+
+# 运行安装脚本
+chmod +x install.sh
+./install.sh
+```
+
+## 🔧 支持的 AI 助手
+
+OpenFOAM MCP 支持多种 AI 助手，选择你喜欢的：
+
+| AI 助手 | 配置文件路径 |
+|----------|-------------|
+| **Claude Desktop** | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)<br>`~/.config/Claude/claude_desktop_config.json` (Linux)<br>`%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
+| **Claude Code** | `~/.claude-code/config.json` |
+| **Cursor** | `~/.cursor/mcp_config.json` |
+| **OpenCode** | `~/.opencode/config.json` |
+| **Cline** | `~/.cline/settings.json` |
+
+## 📦 Windows 安装
+
+### 自动安装（推荐）
+
+1. **下载并运行安装脚本**
+```powershell
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+install.bat
+```
+
+### 手动安装
+
+#### 1. 安装 Python
+
+访问 [Python官网](https://www.python.org/downloads/) 下载并安装 Python 3.10+，安装时勾选 "Add Python to PATH"
+
+#### 2. 创建虚拟环境
 
 ```powershell
-# 创建虚拟环境
 python -m venv venv
-
-# 激活虚拟环境
 .\venv\Scripts\activate
+```
 
-# 安装依赖
+#### 3. 安装依赖
+
+```powershell
 pip install -r requirements.txt
 ```
 
-### 3. 配置 Claude Desktop
+### Claude Desktop 配置
 
-**配置文件位置：**
-```
-%APPDATA%\Claude\claude_desktop_config.json
-```
-
-通常路径为：
-```
-C:\Users\YourName\AppData\Roaming\Claude\claude_desktop_config.json
-```
-
-添加以下配置（**注意反斜杠转义**）：
-
-```json
-{
-  "mcpServers": {
-    "openfoam": {
-      "command": "python",
-      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
-    }
-  }
-}
-```
-
-**使用虚拟环境的配置：**
+配置文件：`%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -107,13 +104,67 @@ C:\Users\YourName\AppData\Roaming\Claude\claude_desktop_config.json
 }
 ```
 
-### 4. 重启 Claude Desktop
+### Claude Code 配置
 
-重启 Claude Desktop 使配置生效。
+配置文件：`~/.claude-code/config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "C:\\path\\to\\openfoam-mcp\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
+    }
+  ]
+}
+```
+
+### Cursor 配置
+
+配置文件：`%APPDATA%\Cursor\User\mcp_config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "C:\\path\\to\\openfoam-mcp\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
+    }
+  ]
+}
+```
+
+### OpenCode 配置
+
+配置文件：`~/.opencode/config.json`
+
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "C:\\path\\to\\openfoam-mcp\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
+    }
+  }
+}
+```
 
 ## 🐧 Linux 安装
 
-### 1. 安装 Python
+### 自动安装（推荐）
+
+```bash
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+chmod +x install.sh
+./install.sh
+```
+
+### 手动安装
+
+#### 1. 安装 Python
 
 ```bash
 # Ubuntu/Debian
@@ -121,32 +172,20 @@ sudo apt update
 sudo apt install python3 python3-pip python3-venv
 
 # Fedora/RHEL
-sudo dnf install python3 python3-pip
+sudo dnf install python3 python3-pip python3-devel
 ```
 
-### 2. 克隆项目并安装依赖
+#### 2. 创建虚拟环境并安装依赖
 
 ```bash
-# 克隆项目
-git clone https://github.com/ymg2007/openfoam-mcp.git
-cd openfoam-mcp
-
-# 使用虚拟环境（推荐）
 python3 -m venv venv
 source venv/bin/activate
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 3. 配置 Claude Desktop
+### Claude Desktop 配置
 
-**配置文件位置：**
-```
-~/.config/Claude/claude_desktop_config.json
-```
-
-添加以下配置：
+配置文件：`~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -159,54 +198,130 @@ pip install -r requirements.txt
 }
 ```
 
-**不使用虚拟环境的配置：**
+### Claude Code 配置
+
+配置文件：`~/.claude-code/config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "/home/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/home/yourname/openfoam-mcp/src/server.py"]
+    }
+  ]
+}
+```
+
+### Cursor 配置
+
+配置文件：`~/.cursor/mcp_config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "/home/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/home/yourname/openfoam-mcp/src/server.py"]
+    }
+  ]
+}
+```
+
+### OpenCode 配置
+
+配置文件：`~/.opencode/config.json`
 
 ```json
 {
   "mcpServers": {
     "openfoam": {
-      "command": "python3",
+      "command": "/home/yourname/openfoam-mcp/venv/bin/python",
       "args": ["/home/yourname/openfoam-mcp/src/server.py"]
     }
   }
 }
 ```
 
-### 4. 重启 Claude Desktop
-
-```bash
-# 重启 Claude Desktop 或重启系统
-```
-
 ## 🍎 macOS 安装
 
-### 1. 安装 Python
+### 自动安装（推荐）
 
-macOS 通常预装 Python，或使用 Homebrew：
+```bash
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+chmod +x install.sh
+./install.sh
+```
+
+### 手动安装
+
+#### 1. 安装 Python
 
 ```bash
 brew install python@3.11
 ```
 
-### 2. 克隆项目并安装依赖
+#### 2. 创建虚拟环境并安装依赖
 
 ```bash
-git clone https://github.com/ymg2007/openfoam-mcp.git
-cd openfoam-mcp
-
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. 配置 Claude Desktop
+### Claude Desktop 配置
 
-**配置文件位置：**
-```
-~/Library/Application Support/Claude/claude_desktop_config.json
+配置文件：`~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "/Users/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/Users/yourname/openfoam-mcp/src/server.py"]
+    }
+  }
+}
 ```
 
-添加配置：
+### Claude Code 配置
+
+配置文件：`~/.claude-code/config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "/Users/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/Users/yourname/openfoam-mcp/src/server.py"]
+    }
+  ]
+}
+```
+
+### Cursor 配置
+
+配置文件：`~/.cursor/mcp_config.json`
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "openfoam",
+      "command": "/Users/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/Users/yourname/openfoam-mcp/src/server.py"]
+    }
+  ]
+}
+```
+
+### OpenCode 配置
+
+配置文件：`~/.opencode/config.json`
 
 ```json
 {
@@ -221,8 +336,6 @@ pip install -r requirements.txt
 
 ## 🧪 验证安装
 
-测试服务器是否正常运行：
-
 ```bash
 # 激活虚拟环境后
 python src/server.py
@@ -234,13 +347,11 @@ python src/server.py
 
 ### 切换到 OpenFOAM Case 目录
 
-在使用 MCP 工具前，建议先切换到你的 OpenFOAM case 目录：
-
 ```bash
 cd /path/to/your/OpenFOAM/case
 ```
 
-然后在 Claude Desktop 中使用工具。
+然后在 AI 助手中使用工具。
 
 ### 可用工具
 
@@ -326,21 +437,6 @@ AI: [调用 search_case_files("turbulence")]
 system/fvSchemes:31: turbulence bounded Gauss linearUpwind grad(k);
 ```
 
-## 🧪 测试
-
-项目包含一个示例 case 用于测试：
-
-```bash
-cd openfoam-mcp
-python3 test_all_tools.py
-```
-
-测试修改功能：
-
-```bash
-python3 test_modify.py
-```
-
 ## 🏗️ 项目结构
 
 ```
@@ -353,6 +449,8 @@ openfoam-mcp/
 ├── examples/
 │   ├── test_case/          # 示例 OpenFOAM case
 │   └── SIMPLE_CASE.md      # 使用示例文档
+├── install.bat             # Windows 安装脚本
+├── install.sh              # Linux/macOS 安装脚本
 ├── pyproject.toml         # 项目配置
 ├── requirements.txt       # Python 依赖
 ├── README.md            # 本文件
@@ -403,6 +501,15 @@ openfoam-mcp/
 pip install mcp
 ```
 
+### 虚拟环境创建失败 (Linux)
+
+**错误信息**: `No module named venv`
+
+**解决方法**:
+```bash
+sudo apt install python3-venv
+```
+
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
@@ -416,6 +523,7 @@ MIT License
 - [OpenFOAM 官方文档](https://www.openfoam.com/documentation)
 - [MCP 协议规范](https://modelcontextprotocol.io/)
 - [Claude Desktop 文档](https://docs.anthropic.com/claude/desktop)
+- [Claude Code 文档](https://docs.anthropic.com/claude-code)
 
 ## 🌟 Star History
 
