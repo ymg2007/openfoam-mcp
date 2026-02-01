@@ -1,6 +1,6 @@
 # OpenFOAM MCP Server
 
-一个用于读取和修改 OpenFOAM 配置文件的 MCP (Model Context Protocol) 服务器。
+一个用于读取和修改 OpenFOAM 配置文件的 MCP (Model Context Protocol) 服务器。支持 Windows、Linux 和 macOS。
 
 ## ✨ 功能
 
@@ -24,21 +24,127 @@
 
 ## 🚀 安装
 
-### 1. 安装依赖
+### 依赖要求
 
-```bash
+- **Python**: 3.10 或更高版本
+- **操作系统**: Windows, Linux, macOS
+- **Claude Desktop** (可选，用于 GUI 集成)
+
+### Python 依赖
+
+```
+mcp>=1.0.0
+```
+
+## 📦 Windows 安装
+
+### 1. 安装 Python
+
+- 访问 [Python官网](https://www.python.org/downloads/) 下载并安装 Python 3.10+
+- 安装时勾选 "Add Python to PATH"
+
+### 2. 安装依赖
+
+打开 PowerShell 或命令提示符：
+
+```powershell
+# 克隆或下载项目
+git clone https://github.com/ymg2007/openfoam-mcp.git
 cd openfoam-mcp
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 2. 配置 Claude Desktop
+或使用虚拟环境（推荐）：
 
-在 Claude Desktop 的配置文件中添加 OpenFOAM MCP 服务器：
+```powershell
+# 创建虚拟环境
+python -m venv venv
+
+# 激活虚拟环境
+.\venv\Scripts\activate
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+### 3. 配置 Claude Desktop
 
 **配置文件位置：**
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+通常路径为：
+```
+C:\Users\YourName\AppData\Roaming\Claude\claude_desktop_config.json
+```
+
+添加以下配置（**注意反斜杠转义**）：
+
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "python",
+      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
+    }
+  }
+}
+```
+
+**使用虚拟环境的配置：**
+
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "C:\\path\\to\\openfoam-mcp\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\openfoam-mcp\\src\\server.py"]
+    }
+  }
+}
+```
+
+### 4. 重启 Claude Desktop
+
+重启 Claude Desktop 使配置生效。
+
+## 🐧 Linux 安装
+
+### 1. 安装 Python
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+
+# Fedora/RHEL
+sudo dnf install python3 python3-pip
+```
+
+### 2. 克隆项目并安装依赖
+
+```bash
+# 克隆项目
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+
+# 使用虚拟环境（推荐）
+python3 -m venv venv
+source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+### 3. 配置 Claude Desktop
+
+**配置文件位置：**
+```
+~/.config/Claude/claude_desktop_config.json
+```
 
 添加以下配置：
 
@@ -46,18 +152,83 @@ pip install -r requirements.txt
 {
   "mcpServers": {
     "openfoam": {
-      "command": "python",
-      "args": ["/absolute/path/to/openfoam-mcp/src/server.py"]
+      "command": "/home/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/home/yourname/openfoam-mcp/src/server.py"]
     }
   }
 }
 ```
 
-将 `/absolute/path/to/openfoam-mcp/` 替换为实际的绝对路径。
+**不使用虚拟环境的配置：**
 
-### 3. 重启 Claude Desktop
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "python3",
+      "args": ["/home/yourname/openfoam-mcp/src/server.py"]
+    }
+  }
+}
+```
 
-重启 Claude Desktop 使配置生效。
+### 4. 重启 Claude Desktop
+
+```bash
+# 重启 Claude Desktop 或重启系统
+```
+
+## 🍎 macOS 安装
+
+### 1. 安装 Python
+
+macOS 通常预装 Python，或使用 Homebrew：
+
+```bash
+brew install python@3.11
+```
+
+### 2. 克隆项目并安装依赖
+
+```bash
+git clone https://github.com/ymg2007/openfoam-mcp.git
+cd openfoam-mcp
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. 配置 Claude Desktop
+
+**配置文件位置：**
+```
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+添加配置：
+
+```json
+{
+  "mcpServers": {
+    "openfoam": {
+      "command": "/Users/yourname/openfoam-mcp/venv/bin/python",
+      "args": ["/Users/yourname/openfoam-mcp/src/server.py"]
+    }
+  }
+}
+```
+
+## 🧪 验证安装
+
+测试服务器是否正常运行：
+
+```bash
+# 激活虚拟环境后
+python src/server.py
+```
+
+如果服务器正常启动，应该看到 MCP 服务器初始化的输出。
 
 ## 📖 使用方法
 
@@ -175,15 +346,15 @@ python3 test_modify.py
 ```
 openfoam-mcp/
 ├── src/
-│   ├── __init__.py      # 包初始化
-│   ├── server.py        # MCP 服务器主文件
-│   ├── parser.py        # OpenFOAM 字典解析器
-│   └── editor.py        # 文件编辑工具
+│   ├── __init__.py          # 包初始化
+│   ├── server.py           # MCP 服务器主文件
+│   ├── parser.py           # OpenFOAM 字典解析器
+│   └── editor.py           # 文件编辑工具
 ├── examples/
-│   ├── test_case/       # 示例 OpenFOAM case
-│   └── SIMPLE_CASE.md   # 使用示例文档
-├── pyproject.toml       # 项目配置
-├── requirements.txt     # Python 依赖
+│   ├── test_case/          # 示例 OpenFOAM case
+│   └── SIMPLE_CASE.md      # 使用示例文档
+├── pyproject.toml         # 项目配置
+├── requirements.txt       # Python 依赖
 ├── README.md            # 本文件
 └── INSTALL.md           # 详细安装指南
 ```
@@ -194,7 +365,7 @@ openfoam-mcp/
 
 **错误信息**: "未找到 OpenFOAM case 目录"
 
-**解决方法**: 
+**解决方法**:
 - 确保你在 case 目录或其子目录中
 - case 目录应包含 `0/`, `constant/`, `system/` 子目录
 
@@ -203,9 +374,9 @@ openfoam-mcp/
 **错误信息**: ImportError 或 ModuleNotFoundError
 
 **解决方法**:
-- 检查 Python 路径是否正确
+- 检查 Python 版本是否 >= 3.10
 - 确保安装了所有依赖：`pip install -r requirements.txt`
-- 使用 Python 3.10 或更高版本
+- 检查虚拟环境是否正确激活
 
 ### 问题: 无法修改边界条件
 
@@ -214,6 +385,23 @@ openfoam-mcp/
 **解决方法**:
 - 确认边界名称正确（使用 `get_boundary_conditions` 查看实际边界名）
 - 检查边界条件值格式是否正确
+
+### Windows 路径问题
+
+**问题**: 路径中的反斜杠导致 JSON 解析错误
+
+**解决方法**:
+- 使用双反斜杠 `\\` 或正斜杠 `/`
+- 使用绝对路径
+
+### Python 模块未找到
+
+**错误信息**: `ModuleNotFoundError: No module named 'mcp'`
+
+**解决方法**:
+```bash
+pip install mcp
+```
 
 ## 🤝 贡献
 
@@ -227,3 +415,8 @@ MIT License
 
 - [OpenFOAM 官方文档](https://www.openfoam.com/documentation)
 - [MCP 协议规范](https://modelcontextprotocol.io/)
+- [Claude Desktop 文档](https://docs.anthropic.com/claude/desktop)
+
+## 🌟 Star History
+
+如果这个项目对你有帮助，请给个 Star ⭐
