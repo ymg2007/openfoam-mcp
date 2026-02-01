@@ -1,0 +1,20 @@
+[project]
+name = "openfoam-mcp"
+version = "0.1.0"
+description = "MCP server for OpenFOAM configuration file management"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "pathlib",
+]
+
+[project.scripts]
+openfoam-mcp = "src.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
