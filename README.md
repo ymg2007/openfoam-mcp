@@ -4,12 +4,23 @@
 
 ## ✨ 功能
 
+### 基础功能
 - 📂 **Case 信息查询** - 获取 OpenFOAM case 目录结构和文件列表
 - 📄 **字典文件读取** - 解析 OpenFOAM 字典格式文件（controlDict, fvSchemes 等）
 - ✏️ **参数修改** - 修改 controlDict 等文件中的求解器参数
 - 🔧 **边界条件管理** - 读取和修改场文件的边界条件
 - 🔍 **内容搜索** - 在所有配置文件中搜索关键词
 - 📋 **物理属性查看** - 读取输运属性和湍流模型设置
+
+### 热学/浮力功能（新增）
+- 🌡️ **温度求解器** - 创建和配置温度场文件
+- 🎈 **浮力求解器** - 支持多种浮力驱动流动求解器
+- 🧱 **墙体传热设置** - 支持固定温度、热通量、对流换热边界条件
+- 💨 **送回风口设置** - 配置入口/出口的速度和温度边界条件
+- ☀️ **辐射模型设置** - 支持 P1、viewFactor、DO 等辐射模型
+- ⏱️ **空气龄计算** - 配置空气龄标量输运方程
+- 🔥 **内部热源设置** - 配置人体、设备等内部热源
+- 😊 **PMV-PPD 舒适度指标** - 计算预测平均投票和预测不满意百分比
 
 ## 📋 支持的文件类型
 
@@ -370,6 +381,25 @@ cd /path/to/your/OpenFOAM/case
 | `get_fv_solution` | 读取求解器设置 | "查看求解器设置" |
 | `search_case_files` | 搜索文件内容 | "搜索 turbulence" |
 
+### 热/浮力求解器工具
+
+| 工具名 | 功能 | 示例 |
+|--------|------|------|
+| `list_buoyancy_solvers` | 列出浮力求解器 | "显示可用的浮力求解器" |
+| `set_buoyancy_solver` | 设置浮力求解器 | "设置求解器为 buoyantSimpleFoam" |
+| `add_temperature_field` | 创建温度场 | "创建温度场，初始温度 293K" |
+| `add_gravity_file` | 创建重力文件 | "添加重力文件用于浮力计算" |
+| `add_thermophysical_properties` | 创建热物理属性 | "添加热物理属性文件" |
+| `set_inlet_thermal_conditions` | 设置入口热边界 | "设置入口速度和温度" |
+| `set_wall_thermal_conditions` | 设置墙体热边界 | "设置墙体传热边界条件" |
+| `list_radiation_models` | 列出辐射模型 | "显示可用的辐射模型" |
+| `add_radiation_model` | 添加辐射模型 | "添加 P1 辐射模型" |
+| `add_age_of_air_field` | 添加空气龄场 | "创建空气龄计算场" |
+| `add_heat_source_config` | 添加热源配置 | "添加内部热源 100W" |
+| `add_pmv_ppd_comfort_metrics` | 添加舒适度指标 | "配置 PMV-PPD 计算" |
+| `get_comfort_criteria_info` | 获取舒适度标准 | "显示 ISO 7730 舒适度标准" |
+| `configure_indoor_thermal_environment` | 一键配置热环境 | "配置完整的室内热环境" |
+
 ## 💬 使用示例
 
 ### 示例 1: 获取 Case 信息
@@ -437,15 +467,125 @@ AI: [调用 search_case_files("turbulence")]
 system/fvSchemes:31: turbulence bounded Gauss linearUpwind grad(k);
 ```
 
+### 示例 5: 配置浮力求解器
+
+```
+用户: 查看可用的浮力求解器
+AI: [调用 list_buoyancy_solvers()]
+返回: === 可用的浮力求解器 ===
+
+🔹 buoyantSimpleFoam
+   描述: 稳态浮力驱动流动求解器（Boussinesq近似）
+   求解器类型: steady-state
+   需要的场变量: T, p_rgh, U, k, epsilon, omega
+
+用户: 设置为 buoyantBoussinesqSimpleFoam
+AI: [调用 set_buoyancy_solver("buoyantBoussinesqSimpleFoam")]
+返回: ✅ 已设置求解器为: buoyantBoussinesqSimpleFoam
+```
+
+### 示例 6: 配置温度和墙体传热
+
+```
+用户: 创建温度场，初始温度 293K
+AI: [调用 add_temperature_field(293.0)]
+返回: ✅ 已创建 T 场文件，初始温度: 293 K
+
+用户: 设置墙体温度 295K，对流换热系数 8 W/m²K
+AI: [调用 set_wall_thermal_conditions("walls", temperature=295, heat_transfer_coeff=8)]
+返回: ✅ 已设置墙体 walls 热边界条件: coefficient
+```
+
+### 示例 7: 配置送回风口
+
+```
+用户: 设置送风口 inlet，速度 1.5 m/s，温度 288K
+AI: [调用 set_inlet_thermal_conditions("inlet", 1.5, 0, 0, 288)]
+返回: ✅ 已设置入口 inlet:
+  - U: fixedValue
+  - T: fixedValue
+  - k: fixedValue
+  - epsilon: fixedValue
+```
+
+### 示例 8: 配置辐射模型
+
+```
+用户: 查看可用的辐射模型
+AI: [调用 list_radiation_models()]
+返回: === 可用的辐射模型 ===
+
+🔹 none
+   描述: 无辐射模型
+
+🔹 P1
+   描述: P1 辐射模型（适用于光学厚介质）
+
+🔹 viewFactor
+   描述: 视角系数辐射模型（适用于封闭空间）
+
+用户: 添加 P1 辐射模型
+AI: [调用 add_radiation_model("P1")]
+返回: ✅ 已创建辐射模型: P1 (P1 辐射模型（适用于光学厚介质）)
+```
+
+### 示例 9: 配置空气龄和热源
+
+```
+用户: 添加空气龄计算
+AI: [调用 add_age_of_air_field()]
+返回: ✅ 已创建空气龄场文件
+
+用户: 添加内部热源 500W
+AI: [调用 add_heat_source_config(power=500)]
+返回: ✅ 已创建热源配置: 500.0 W (500.0 W/m³)
+```
+
+### 示例 10: 配置 PMV-PPD 舒适度指标
+
+```
+用户: 配置 PMV-PPD 计算，代谢率 1.2 met，服装热阻 0.6 clo
+AI: [调用 add_pmv_ppd_comfort_metrics(metabolic_rate=1.2, clothing_insulation=0.6)]
+返回: ✅ 已添加 PMV-PPD 计算函数 (met=1.2 met, icl=0.6 clo)
+```
+
+### 示例 11: 一键配置室内热环境
+
+```
+用户: 配置完整的室内热环境：浮力求解器、温度 293K、入口速度 1 m/s 温度 293K、
+     墙体温度 295K、启用浮力和辐射 P1 模型、启用空气龄、PMV-PPD
+AI: [调用 configure_indoor_thermal_environment(
+       solver_type="buoyantBoussinesqSimpleFoam",
+       ambient_temp=293,
+       inlet_velocity_x=1,
+       inlet_temp=293,
+       wall_temp=295,
+       radiation_model="P1",
+       enable_age_of_air=True,
+       enable_pmv_ppd=True
+     )]
+返回: === 室内热环境配置完成 ===
+
+✅ 已设置求解器为: buoyantBoussinesqSimpleFoam
+✅ 已创建 T 场文件，初始温度: 293 K
+✅ 已创建重力文件: gravity = [0, 0, -9.81]
+✅ 已设置入口 inlet: ...
+✅ 已设置墙体 walls 热边界条件: ...
+✅ 已创建辐射模型: P1 ...
+✅ 已创建空气龄场文件
+✅ 已添加 PMV-PPD 计算函数 ...
+```
+
 ## 🏗️ 项目结构
 
 ```
 openfoam-mcp/
 ├── src/
 │   ├── __init__.py          # 包初始化
-│   ├── server.py           # MCP 服务器主文件
+│   ├── server.py           # MCP 服务器主文件（含热学工具）
 │   ├── parser.py           # OpenFOAM 字典解析器
-│   └── editor.py           # 文件编辑工具
+│   ├── editor.py           # 文件编辑工具
+│   └── thermal.py          # 热/浮力求解器配置模块（新增）
 ├── examples/
 │   ├── test_case/          # 示例 OpenFOAM case
 │   └── SIMPLE_CASE.md      # 使用示例文档

@@ -15,9 +15,11 @@ from mcp.server.fastmcp import FastMCP
 try:
     from .parser import OpenFOAMDict
     from .editor import modify_dict_value, modify_boundary_value
+    from .thermal import ThermalConfig, ThermalEditor
 except ImportError:
     from parser import OpenFOAMDict
     from editor import modify_dict_value, modify_boundary_value
+    from thermal import ThermalConfig, ThermalEditor
 
 # 创建 MCP 实例
 mcp = FastMCP("OpenFOAM MCP Server")
@@ -482,6 +484,448 @@ def search_case_files(keyword: str) -> str:
         return "=== 搜索结果 ===\n\n" + "\n".join(results[:50])  # 限制结果数量
     else:
         return f"未找到包含 '{keyword}' 的内容"
+
+
+# ============== 热/浮力求解器相关 MCP 工具 ==============
+
+@mcp.tool()
+def list_buoyancy_solvers() -> str:
+    """
+    列出所有可用的浮力求解器类型及其描述
+
+    返回:
+        可用的浮力求解器列表
+    """
+    templates = ThermalConfig.get_buoyancy_solver_templates()
+
+    result = "=== 可用的浮力求解器 ===\n\n"
+
+    for solver_name, config in templates.items():
+        result += f"🔹 {solver_name}\n"
+        result += f"   描述: {config['description']}\n"
+        result += f"   求解器类型: {config['controlDict']['solver']}\n"
+        result += f"   需要的场变量: {', '.join(config['requires'])}\n\n"
+
+    return result
+
+
+@mcp.tool()
+def set_buoyancy_solver(solver_type: str) -> str:
+    """
+    设置浮力求解器（修改 controlDict 中的 application）
+
+    Args:
+        solver_type: 求解器类型（如 buoyantSimpleFoam, buoyantPimpleFoam,
+                     buoyantBoussinesqSimpleFoam, buoyantBoussinesqPimpleFoam）
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.set_buoyancy_solver(solver_type)
+
+    return message
+
+
+@mcp.tool()
+def add_temperature_field(temperature: float = 293.0) -> str:
+    """
+    创建温度场文件 (0/T)
+
+    Args:
+        temperature: 初始温度（单位：K）
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_temperature_field(temperature)
+
+    return message
+
+
+@mcp.tool()
+def add_gravity_file(gravity_x: float = 0.0, gravity_y: float = 0.0,
+                     gravity_z: float = -9.81) -> str:
+    """
+    创建重力文件 (constant/g) 用于浮力计算
+
+    Args:
+        gravity_x: X 方向重力加速度 (m/s²)
+        gravity_y: Y 方向重力加速度 (m/s²)
+        gravity_z: Z 方向重力加速度 (m/s²)
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_gravity_file([gravity_x, gravity_y, gravity_z])
+
+    return message
+
+
+@mcp.tool()
+def add_thermophysical_properties() -> str:
+    """
+    创建热物理属性文件 (constant/thermophysicalProperties)
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_thermophysical_properties()
+
+    return message
+
+
+@mcp.tool()
+def set_inlet_thermal_conditions(
+    inlet_name: str,
+    velocity_x: float,
+    velocity_y: float,
+    velocity_z: float,
+    temperature: float,
+    turbulence_intensity: float = 0.05
+) -> str:
+    """
+    设置入口的热边界条件（速度和温度）
+
+    Args:
+        inlet_name: 入口边界名称
+        velocity_x: X 方向速度 (m/s)
+        velocity_y: Y 方向速度 (m/s)
+        velocity_z: Z 方向速度 (m/s)
+        temperature: 入口温度 (K)
+        turbulence_intensity: 湍流强度 (0-1)
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.set_inlet_conditions(
+        inlet_name,
+        [velocity_x, velocity_y, velocity_z],
+        temperature,
+        turbulence_intensity
+    )
+
+    return message
+
+
+@mcp.tool()
+def set_wall_thermal_conditions(
+    wall_name: str = "walls",
+    temperature: Optional[float] = None,
+    heat_flux: Optional[float] = None,
+    heat_transfer_coeff: Optional[float] = None,
+    external_temp: Optional[float] = None
+) -> str:
+    """
+    设置墙体的热边界条件
+
+    Args:
+        wall_name: 墙体边界名称
+        temperature: 固定温度 (K)
+        heat_flux: 热通量 (W/m²)
+        heat_transfer_coeff: 对流换热系数 (W/m²K)
+        external_temp: 外部温度 (K)
+
+    说明:
+        - 如果指定 heat_flux，使用热通量边界条件
+        - 如果指定 heat_transfer_coeff 和 external_temp，使用对流换热边界条件
+        - 否则使用固定温度边界条件
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.set_wall_thermal_conditions(
+        wall_name, temperature, heat_flux, heat_transfer_coeff, external_temp
+    )
+
+    return message
+
+
+@mcp.tool()
+def list_radiation_models() -> str:
+    """
+    列出所有可用的辐射模型及其描述
+
+    返回:
+        可用的辐射模型列表
+    """
+    templates = ThermalConfig.get_radiation_model_templates()
+
+    result = "=== 可用的辐射模型 ===\n\n"
+
+    for model_name, config in templates.items():
+        result += f"🔹 {model_name}\n"
+        result += f"   描述: {config['description']}\n\n"
+
+    return result
+
+
+@mcp.tool()
+def add_radiation_model(model: str = "P1") -> str:
+    """
+    创建辐射模型配置文件 (constant/radiationProperties)
+
+    Args:
+        model: 辐射模型类型
+               - none: 无辐射模型
+               - P1: P1 辐射模型
+               - viewFactor: 视角系数模型
+               - surfaceToSurface: 面到面模型
+               - DO: 离散坐标模型（最精确）
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_radiation_model(model)
+
+    return message
+
+
+@mcp.tool()
+def add_age_of_air_field() -> str:
+    """
+    创建空气龄场文件 (0/age)
+
+    空气龄是空气从进入室内空间起所经历的平均时间，
+    用于评估通风效率和室内空气质量。
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_age_of_air_field()
+
+    return message
+
+
+@mcp.tool()
+def add_heat_source_config(
+    power: float = 100.0,
+    volume: float = 1.0,
+    source_type: str = "uniform"
+) -> str:
+    """
+    创建内部热源配置文件
+
+    Args:
+        power: 热源功率 (W)
+        volume: 热源体积 (m³)
+        source_type: 热源类型
+                     - uniform: 均匀热源
+                     - mapped: 映射热源
+                     - coded: 自定义代码热源
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_heat_source_config(power, volume, source_type)
+
+    return message
+
+
+@mcp.tool()
+def add_pmv_ppd_comfort_metrics(
+    metabolic_rate: float = 1.0,
+    clothing_insulation: float = 0.5,
+    air_velocity: float = 0.1,
+    radiant_temp: float = 293.0
+) -> str:
+    """
+    在 controlDict 中添加 PMV-PPD 舒适度指标计算函数
+
+    Args:
+        metabolic_rate: 代谢率
+                        0.8-1.0: 静坐
+                        1.2-1.6: 轻度活动
+                        1.6-2.0: 中度活动
+        clothing_insulation: 服装热阻
+                             0.3-0.5: 夏季薄装
+                             0.5-1.0: 春秋装
+                             1.0-1.5: 冬季厚装
+        air_velocity: 空气流速 (m/s)
+                      空调房间: 0.1-0.2
+                      自然通风: 0.2-0.5
+        radiant_temp: 平均辐射温度 (K)
+
+    PMV (Predicted Mean Vote): 预测平均投票
+    PPD (Predicted Percentage of Dissatisfied): 预测不满意百分比
+
+    舒适度标准 (ISO 7730):
+    - PMV: -0.5 ~ +0.5
+    - PPD: < 10%
+
+    返回:
+        操作结果
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    success, message = editor.add_pmv_ppd_function(
+        metabolic_rate, clothing_insulation, air_velocity, radiant_temp
+    )
+
+    return message
+
+
+@mcp.tool()
+def get_comfort_criteria_info() -> str:
+    """
+    获取热舒适度标准说明
+
+    基于 ISO 7730 和 ASHRAE Standard 55
+
+    返回:
+        舒适度标准说明文本
+    """
+    return ThermalConfig.get_comfort_criteria_template()
+
+
+@mcp.tool()
+def configure_indoor_thermal_environment(
+    solver_type: str = "buoyantBoussinesqSimpleFoam",
+    ambient_temp: float = 293.0,
+    inlet_velocity_x: float = 1.0,
+    inlet_velocity_y: float = 0.0,
+    inlet_velocity_z: float = 0.0,
+    inlet_temp: float = 293.0,
+    wall_temp: float = 293.0,
+    heat_transfer_coeff: float = 8.0,
+    enable_buoyancy: bool = True,
+    radiation_model: str = "none",
+    enable_age_of_air: bool = False,
+    enable_heat_source: bool = False,
+    heat_source_power: float = 100.0,
+    enable_pmv_ppd: bool = False,
+    metabolic_rate: float = 1.0,
+    clothing_insulation: float = 0.5
+) -> str:
+    """
+    一键配置室内热环境（综合配置）
+
+    这个工具会自动设置浮力求解器、温度场、送回风口、墙体传热、
+    辐射模型、空气龄、内部热源和 PMV-PPD 指标等所有热学相关配置。
+
+    Args:
+        solver_type: 浮力求解器类型
+        ambient_temp: 环境温度 (K)
+        inlet_velocity_x/y/z: 入口速度 (m/s)
+        inlet_temp: 入口温度 (K)
+        wall_temp: 墙体温度 (K)
+        heat_transfer_coeff: 墙体对流换热系数 (W/m²K)
+        enable_buoyancy: 是否启用浮力（会自动设置重力文件）
+        radiation_model: 辐射模型
+        enable_age_of_air: 是否计算空气龄
+        enable_heat_source: 是否启用内部热源
+        heat_source_power: 热源功率 (W)
+        enable_pmv_ppd: 是否计算 PMV-PPD
+        metabolic_rate: 代谢率
+        clothing_insulation: 服装热阻
+
+    返回:
+        操作结果汇总
+    """
+    case_dir = find_openfoam_case()
+    if not case_dir:
+        return "❌ 未找到 OpenFOAM case 目录"
+
+    editor = ThermalEditor(case_dir)
+    results = []
+
+    # 1. 设置浮力求解器
+    success, msg = editor.set_buoyancy_solver(solver_type)
+    results.append(msg)
+
+    # 2. 添加温度场
+    success, msg = editor.add_temperature_field(ambient_temp)
+    results.append(msg)
+
+    # 3. 添加重力文件（如果启用浮力）
+    if enable_buoyancy:
+        success, msg = editor.add_gravity_file()
+        results.append(msg)
+
+    # 4. 设置入口边界条件
+    success, msg = editor.set_inlet_conditions(
+        "inlet", [inlet_velocity_x, inlet_velocity_y, inlet_velocity_z],
+        inlet_temp
+    )
+    results.append(msg)
+
+    # 5. 设置墙体热边界条件
+    success, msg = editor.set_wall_thermal_conditions(
+        "walls", temperature=wall_temp,
+        heat_transfer_coeff=heat_transfer_coeff
+    )
+    results.append(msg)
+
+    # 6. 添加辐射模型
+    if radiation_model != "none":
+        success, msg = editor.add_radiation_model(radiation_model)
+        results.append(msg)
+
+    # 7. 添加空气龄
+    if enable_age_of_air:
+        success, msg = editor.add_age_of_air_field()
+        results.append(msg)
+
+    # 8. 添加热源
+    if enable_heat_source:
+        success, msg = editor.add_heat_source_config(heat_source_power)
+        results.append(msg)
+
+    # 9. 添加 PMV-PPD
+    if enable_pmv_ppd:
+        success, msg = editor.add_pmv_ppd_function(
+            metabolic_rate, clothing_insulation
+        )
+        results.append(msg)
+
+    return "=== 室内热环境配置完成 ===\n\n" + "\n".join(results)
 
 
 def main():
